@@ -149,4 +149,13 @@ class OrderController extends Controller
                 break;
         }
     }
+
+    public function track($tracking)
+    {
+        $order = Order::where('tracking_number', $tracking)
+            ->with('items.product')
+            ->firstOrFail();
+
+        return response()->json($order);
+    }
 }

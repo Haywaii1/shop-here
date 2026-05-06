@@ -8,7 +8,6 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\CartController;
 
 
@@ -65,14 +64,14 @@ Route::middleware('auth:sanctum')->put('/orders/{id}/confirm-received', [OrderCo
 // });
 
 Route::middleware('auth:admin')->prefix('admin')->group(function () {
-    Route::get('/orders', [AdminOrderController::class, 'index']);
-    Route::put('/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+    Route::get('/orders', 'App\Http\Controllers\AdminOrderController@index');
+    Route::put('/orders/{id}/status', 'App\Http\Controllers\AdminOrderController@updateStatus');
 });
 
 Route::middleware('auth:admin')->prefix('admin')->group(function () {
-    Route::put('/orders/{id}/prepare', [AdminOrderController::class, 'prepareShipment']);
-    Route::put('/orders/{id}/out-for-delivery', [AdminOrderController::class, 'outForDelivery']);
-    Route::put('/orders/{id}/deliver', [AdminOrderController::class, 'markDelivered']);
+    Route::put('/orders/{id}/prepare', 'App\Http\Controllers\AdminOrderController@prepareShipment');
+    Route::put('/orders/{id}/out-for-delivery', 'App\Http\Controllers\AdminOrderController@outForDelivery');
+    Route::put('/orders/{id}/deliver', 'App\Http\Controllers\AdminOrderController@markDelivered');
 });
 
 
@@ -86,10 +85,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
 });
 
-Route::post('/payment/initialize', [PaymentController::class, 'initialize']);
+Route::post('/payment/initialize', 'App\Http\Controllers\PaymentController@initialize');
 
-Route::post('/payment/webhook', [PaymentController::class, 'webhook']);
-Route::get('/payment/verify/{reference}', [PaymentController::class, 'verify']);
+Route::post('/payment/webhook', 'App\Http\Controllers\PaymentController@webhook');
+Route::get('/payment/verify/{reference}', 'App\Http\Controllers\PaymentController@verify');
 
 
 Route::get('/cart', [CartController::class, 'index']);
@@ -97,3 +96,5 @@ Route::post('/cart/add', [CartController::class, 'add']);
 Route::put('/cart/update/{id}', [CartController::class, 'update']);
 Route::delete('/cart/remove/{id}', [CartController::class, 'remove']);
 Route::delete('/cart/clear', [CartController::class, 'clear']);
+
+Route::get('/track-order/{tracking}', [OrderController::class, 'track']);

@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderShippedMail;
 use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use App\Services\SmsService;
 
 class AdminOrderController extends Controller
 {
@@ -23,9 +26,7 @@ class AdminOrderController extends Controller
                 $query->onlyTrashed();
             }
 
-            $orders = $query->get();
-
-            return response()->json($orders);
+            return response()->json($query->get());
         } catch (\Throwable $e) {
             Log::error('Admin Orders Error', [
                 'message' => $e->getMessage(),
@@ -45,7 +46,6 @@ class AdminOrderController extends Controller
 
         $order = Order::findOrFail($id);
         $order->status = $request->status;
-
         $this->applyStatusTimestamps($order, $request->status);
         $order->save();
 
@@ -81,24 +81,42 @@ class AdminOrderController extends Controller
 
         if ($order->status !== 'preparing_shipment') {
             return response()->json([
-                'message' => 'Order must be in preparation before delivery'
+                'message' => 'Order must be in preparation before delivery',
             ], 400);
         }
 
         $order->status = 'out_for_delivery';
 
-        // ✅ generate tracking ONLY here
         if (!$order->tracking_number) {
             $order->tracking_number = $this->generateTrackingNumber($order);
         }
 
         $this->applyStatusTimestamps($order, 'out_for_delivery');
-
         $order->save();
+        $order->load('user');
+
+        // ✅ Send SMS
+        if (!empty($order->user->phone)) {
+            SmsService::send(
+                $order->user->phone,
+                "Your order is out for delivery. Tracking ID: {$order->tracking_number}"
+            );
+        }
+
+        try {
+            if ($order->user?->email) {
+                Mail::to($order->user->email)->send(new OrderShippedMail($order));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Order shipped email failed', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'message' => 'Order is out for delivery',
-            'order' => $order
+            'order' => $order,
         ]);
     }
 
@@ -146,13 +164,12 @@ class AdminOrderController extends Controller
 
     private function generateTrackingNumber(Order $order): string
     {
-        return 'TRK-' . strtoupper(Str::random(4)) . '-' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+        return 'TRK-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)) . '-' . $order->id;
     }
 
     public function destroy($id)
     {
-        $order = Order::findOrFail($id);
-        $order->delete();
+        Order::findOrFail($id)->delete();
 
         return response()->json([
             'message' => 'Order moved to trash',
@@ -172,8 +189,7 @@ class AdminOrderController extends Controller
 
     public function forceDelete($id)
     {
-        $order = Order::onlyTrashed()->findOrFail($id);
-        $order->forceDelete();
+        Order::onlyTrashed()->findOrFail($id)->forceDelete();
 
         return response()->json([
             'message' => 'Order permanently deleted',

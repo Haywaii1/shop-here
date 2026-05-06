@@ -38,4 +38,8 @@ return [
         'callback_url' => env('PAYSTACK_CALLBACK_URL', rtrim(env('APP_URL', 'http://127.0.0.1:8000'), '/') . '/payment-success'),
     ],
 
+    'termii' => [
+        'key' => env('TERMII_KEY'),
+        'sender' => env('TERMII_SENDER'),
+    ],
 ];

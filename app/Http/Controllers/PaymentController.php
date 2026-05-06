@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderConfirmationMail;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -12,10 +13,10 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Throwable;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\OrderConfirmationMail;
+use App\Services\SmsService;
 
 class PaymentController extends Controller
 {
@@ -248,7 +249,7 @@ class PaymentController extends Controller
 
     private function finalizeSuccessfulPayment(string $reference, float $amountPaid): Order
     {
-        return DB::transaction(function () use ($reference, $amountPaid) {
+        $order = DB::transaction(function () use ($reference, $amountPaid) {
             $existingOrder = Order::with('items.product')
                 ->where('payment_reference', $reference)
                 ->lockForUpdate()
@@ -280,7 +281,7 @@ class PaymentController extends Controller
                 'payment_method' => $draft['payment_method'],
                 'payment_reference' => $reference,
                 'paid_at' => now(),
-                'tracking_number' => $this->generateTrackingNumberFromReference($reference),
+                'tracking_number' => null,
             ]);
 
             foreach ($draft['items'] as $lineItem) {
@@ -289,10 +290,10 @@ class PaymentController extends Controller
                     ? ProductVariant::lockForUpdate()->findOrFail($lineItem['product_variant_id'])
                     : null;
 
-                $stock = $variant ? $variant->stock : $product->stock;
-
-                if ($stock < $lineItem['quantity']) {
-                    throw new \RuntimeException("Stock issue for {$product->name}");
+                if ($variant) {
+                    $variant->decrement('stock', $lineItem['quantity']);
+                } else {
+                    $product->decrement('stock', $lineItem['quantity']);
                 }
 
                 OrderItem::create([
@@ -302,28 +303,48 @@ class PaymentController extends Controller
                     'quantity' => $lineItem['quantity'],
                     'price' => $lineItem['price'],
                 ]);
-
-                if ($variant) {
-                    $variant->decrement('stock', $lineItem['quantity']);
-                } else {
-                    $product->decrement('stock', $lineItem['quantity']);
-                }
             }
 
-            Cache::forget($this->draftCacheKey($reference));
-
-            return $order->fresh('items.product');
+            return $order->fresh(['items.product', 'user']);
         });
+
+        Cache::forget($this->draftCacheKey($reference));
+
+        try {
+            if ($order->user?->email) {
+                Mail::to($order->user->email)->send(new OrderConfirmationMail($order));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Order confirmation email failed', [
+                'order_id' => $order->id,
+                'reference' => $reference,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        if ($order->user && !empty($order->user->phone)) {
+            try {
+                if ($order->user && !empty($order->user->phone)) {
+                    SmsService::send(
+                        $order->user->phone,
+                        "Your order {$order->order_number} has been confirmed. We will notify you when it's shipped."
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::error('SMS failed', [
+                    'order_id' => $order->id,
+                    'phone' => $order->user->phone ?? null,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $order;
     }
 
     private function draftCacheKey(string $reference): string
     {
         return "paystack_checkout_draft:{$reference}";
-    }
-
-    private function generateTrackingNumberFromReference(string $reference): string
-    {
-        return 'TRK-' . strtoupper(Str::substr(Str::replace('PAY_', '', $reference), 0, 10));
     }
 
     private function paystackRequest(bool $withRetry = true)
