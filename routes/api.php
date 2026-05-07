@@ -34,10 +34,12 @@ Route::middleware(['auth:admin'])->prefix('admin')->group(function () {
 
     Route::get('/dashboard', [AdminController::class, 'dashboard']);
 
-    // Route::get('/products/{id}', [ProductController::class, 'show']);
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+    Route::post('/products/{id}/toggle-deal', [ProductController::class, 'toggleDeal']);
 
     Route::post('/products/{id}/variants', [ProductController::class, 'storeVariants']);
     Route::put('/variants/{id}', [ProductController::class, 'updateVariant']);
@@ -98,3 +100,5 @@ Route::delete('/cart/remove/{id}', [CartController::class, 'remove']);
 Route::delete('/cart/clear', [CartController::class, 'clear']);
 
 Route::get('/track-order/{tracking}', [OrderController::class, 'track']);
+
+Route::get('/deals', [ProductController::class, 'deals']);

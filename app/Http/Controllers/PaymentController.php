@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Throwable;
 use App\Services\SmsService;
@@ -221,7 +222,8 @@ class PaymentController extends Controller
                 $variant = ProductVariant::findOrFail($item['variant_id']);
             }
 
-            $price = $variant ? $variant->price : $product->price;
+            $basePrice = (float) ($variant ? $variant->price : $product->price);
+            $price = $this->resolveActivePrice($product, $basePrice);
             $stock = $variant ? $variant->stock : $product->stock;
 
             if ($stock < $item['quantity']) {
@@ -345,6 +347,25 @@ class PaymentController extends Controller
     private function draftCacheKey(string $reference): string
     {
         return "paystack_checkout_draft:{$reference}";
+    }
+
+    private function resolveActivePrice(Product $product, float $basePrice): float
+    {
+        if (!$product->is_deal || !$product->deal_percentage) {
+            return $basePrice;
+        }
+
+        if (Schema::hasColumns('products', ['deal_starts_at', 'deal_ends_at'])) {
+            if ($product->deal_starts_at && now()->lt($product->deal_starts_at)) {
+                return $basePrice;
+            }
+
+            if ($product->deal_ends_at && now()->gte($product->deal_ends_at)) {
+                return $basePrice;
+            }
+        }
+
+        return $basePrice - (($basePrice * (float) $product->deal_percentage) / 100);
     }
 
     private function paystackRequest(bool $withRetry = true)

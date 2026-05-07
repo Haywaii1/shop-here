@@ -176,6 +176,10 @@ export default function AdminDashboard() {
             View Orders
           </Link>
 
+          <Link to="/admin/deals" className="btn btn-info">
+            Manage Deals of the Day
+          </Link>
+
         </div>
 
       </div>

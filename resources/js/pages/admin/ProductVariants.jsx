@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function ProductVariants() {
-
     const { id } = useParams();
+    const navigate = useNavigate();
 
     const [variants, setVariants] = useState([]);
     const [loading, setLoading] = useState(false);
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("admin_token");
+
+    useEffect(() => {
+        if (!token) {
+            navigate("/admin/login");
+        }
+    }, [token, navigate]);
 
     // ✅ FETCH EXISTING VARIANTS
     const fetchVariants = async () => {
@@ -37,8 +43,9 @@ export default function ProductVariants() {
     };
 
     useEffect(() => {
+        if (!token) return;
         fetchVariants();
-    }, []);
+    }, [token, id]);
 
     const addVariant = () => {
         setVariants([

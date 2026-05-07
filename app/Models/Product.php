@@ -14,7 +14,17 @@ class Product extends Model
         'description',
         'image1',
         'image2',
-        'image3'
+        'image3',
+        'is_deal',
+        'deal_percentage',
+        'deal_starts_at',
+        'deal_ends_at',
+    ];
+
+    protected $casts = [
+        'is_deal' => 'boolean',
+        'deal_starts_at' => 'datetime',
+        'deal_ends_at' => 'datetime',
     ];
 
     public function category()
@@ -43,7 +53,24 @@ class Product extends Model
     }
 
     public function reviews()
-{
-    return $this->hasMany(Review::class);
-}
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function hasActiveDeal(): bool
+    {
+        if (!$this->is_deal || !$this->deal_percentage) {
+            return false;
+        }
+
+        if ($this->deal_starts_at && $this->deal_starts_at->isFuture()) {
+            return false;
+        }
+
+        if ($this->deal_ends_at && $this->deal_ends_at->isPast()) {
+            return false;
+        }
+
+        return true;
+    }
 }
