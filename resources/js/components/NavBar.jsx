@@ -11,19 +11,11 @@ export default function Navbar() {
           <ul className="navbar-nav">
 
             <li className="nav-item">
-              <a className="nav-link text-dark">Shop by Department</a>
-            </li>
-
-            <li className="nav-item">
               <a className="nav-link text-dark">Category</a>
             </li>
 
             <li className="nav-item">
               <a className="nav-link text-dark">Products</a>
-            </li>
-
-            <li className="nav-item">
-              <a className="nav-link text-dark">Blog</a>
             </li>
 
           </ul>
