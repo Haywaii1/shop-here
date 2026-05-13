@@ -2,10 +2,15 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { smallProductPlaceholder } from "../utils/placeholders";
 
-export default function ProductGrid() {
+export default function AllProducts() {
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // ✅ PAGINATION
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const productsPerPage = 12;
 
     useEffect(() => {
 
@@ -13,8 +18,8 @@ export default function ProductGrid() {
             .then(res => res.json())
             .then(data => {
 
-                // ✅ SHOW ONLY FIRST 8 PRODUCTS
-                setProducts(data.slice(0, 8));
+                // ✅ SHOW ALL PRODUCTS
+                setProducts(data);
 
             })
             .catch(err => {
@@ -26,6 +31,29 @@ export default function ProductGrid() {
 
     }, []);
 
+    // ✅ PAGINATION LOGIC
+    const lastIndex =
+        currentPage * productsPerPage;
+
+    const firstIndex =
+        lastIndex - productsPerPage;
+
+    const currentProducts =
+        products.slice(firstIndex, lastIndex);
+
+    const totalPages =
+        Math.ceil(products.length / productsPerPage);
+
+    // ✅ CHANGE PAGE
+    const paginate = (pageNumber) => {
+        setCurrentPage(pageNumber);
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    };
+
     if (loading) {
         return (
             <div className="text-center py-5">
@@ -36,11 +64,33 @@ export default function ProductGrid() {
 
     return (
 
-        <div>
+        <div className="container py-4">
 
+            {/* HEADER */}
+            <div className="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+
+                    <h2 className="fw-bold mb-1">
+                        All Products
+                    </h2>
+
+                    <p className="text-muted mb-0">
+                        Browse our latest collection
+                    </p>
+
+                </div>
+
+                <span className="badge bg-dark fs-6">
+                    {products.length} Products
+                </span>
+
+            </div>
+
+            {/* PRODUCTS */}
             <div className="row">
 
-                {products.length === 0 ? (
+                {currentProducts.length === 0 ? (
 
                     <div className="col-12 text-center">
                         No products found
@@ -48,9 +98,8 @@ export default function ProductGrid() {
 
                 ) : (
 
-                    products.map((product) => {
+                    currentProducts.map((product) => {
 
-                        // ✅ Main image
                         const mainImage = product.images?.find(
                             img => img.is_main
                         );
@@ -63,13 +112,14 @@ export default function ProductGrid() {
                             ? `http://127.0.0.1:8000/storage/${imagePath}`
                             : smallProductPlaceholder;
 
-                        // ✅ Deal logic
+                        // ✅ DEAL LOGIC
                         const discountPercent =
                             product.is_deal
                                 ? product.deal_percentage || 0
                                 : 0;
 
-                        const oldPrice = Number(product.price);
+                        const oldPrice =
+                            Number(product.price);
 
                         const discountedPrice =
                             oldPrice -
@@ -96,7 +146,6 @@ export default function ProductGrid() {
                                                 className="overflow-hidden rounded"
                                                 style={{
                                                     height: "250px",
-                                                    width: "100%",
                                                     backgroundColor: "#f8f8f8"
                                                 }}
                                             >
@@ -115,11 +164,13 @@ export default function ProductGrid() {
 
                                             {/* DEAL BADGE */}
                                             {product.is_deal && (
+
                                                 <span
                                                     className="badge bg-danger position-absolute top-0 start-0 m-2"
                                                 >
                                                     -{discountPercent}%
                                                 </span>
+
                                             )}
 
                                         </div>
@@ -180,18 +231,51 @@ export default function ProductGrid() {
 
             </div>
 
-            {/* ✅ VIEW ALL LINK */}
-            {products.length > 0 && (
+            {/* ✅ PAGINATION */}
+            {totalPages > 1 && (
 
-                <div className="text-center mt-3">
+                <div className="d-flex justify-content-center flex-wrap gap-2 mt-4">
 
-                    <Link
-                        to="/products"
-                        className="btn btn-outline-dark px-4 rounded-pill"
+                    {/* PREVIOUS */}
+                    <button
+                        className="btn btn-outline-dark"
+                        disabled={currentPage === 1}
+                        onClick={() =>
+                            paginate(currentPage - 1)
+                        }
                     >
-                        View All Products
+                        Prev
+                    </button>
 
-                    </Link>
+                    {/* PAGE NUMBERS */}
+                    {[...Array(totalPages)].map((_, index) => (
+
+                        <button
+                            key={index}
+                            className={`btn ${
+                                currentPage === index + 1
+                                    ? "btn-dark"
+                                    : "btn-outline-dark"
+                            }`}
+                            onClick={() =>
+                                paginate(index + 1)
+                            }
+                        >
+                            {index + 1}
+                        </button>
+
+                    ))}
+
+                    {/* NEXT */}
+                    <button
+                        className="btn btn-outline-dark"
+                        disabled={currentPage === totalPages}
+                        onClick={() =>
+                            paginate(currentPage + 1)
+                        }
+                    >
+                        Next
+                    </button>
 
                 </div>
 

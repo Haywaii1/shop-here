@@ -30,6 +30,20 @@ export default function SearchResults() {
                     const searchText =
                         query?.toLowerCase() || "";
 
+                    // ✅ SEARCH FOR DEALS / DISCOUNTS TOO
+                    const isDiscounted =
+                        product.is_deal ||
+                        Number(product.deal_percentage) > 0;
+
+                    // ✅ SPECIAL SEARCHES
+                    if (
+                        searchText.includes("deal") ||
+                        searchText.includes("discount") ||
+                        searchText.includes("sale")
+                    ) {
+                        return isDiscounted;
+                    }
+
                     return (
                         name.includes(searchText) ||
                         category.includes(searchText)
@@ -85,6 +99,22 @@ export default function SearchResults() {
                             ? `http://127.0.0.1:8000/storage/${imagePath}`
                             : smallProductPlaceholder;
 
+                        // ✅ DEAL LOGIC
+                        const oldPrice = Number(product.price);
+
+                        const discountPercent = Number(
+                            product.deal_percentage || 0
+                        );
+
+                        const hasDiscount =
+                            product.is_deal &&
+                            discountPercent > 0;
+
+                        const finalPrice = hasDiscount
+                            ? oldPrice -
+                              (oldPrice * discountPercent) / 100
+                            : oldPrice;
+
                         return (
 
                             <div
@@ -93,7 +123,7 @@ export default function SearchResults() {
                             >
 
                                 <div
-                                    className="card h-100 border-0 shadow-sm"
+                                    className="card h-100 border-0 shadow-sm position-relative"
                                     style={{ cursor: "pointer" }}
                                     onClick={() =>
                                         navigate(
@@ -101,6 +131,20 @@ export default function SearchResults() {
                                         )
                                     }
                                 >
+
+                                    {/* ✅ DISCOUNT BADGE */}
+                                    {hasDiscount && (
+                                        <span
+                                            className="badge bg-danger position-absolute"
+                                            style={{
+                                                top: "10px",
+                                                right: "10px",
+                                                zIndex: 10
+                                            }}
+                                        >
+                                            -{discountPercent}%
+                                        </span>
+                                    )}
 
                                     <div
                                         style={{
@@ -131,9 +175,28 @@ export default function SearchResults() {
                                             {product.category?.name}
                                         </small>
 
-                                        <div className="text-danger fw-bold">
-                                            ₦{Number(product.price).toLocaleString()}
-                                        </div>
+                                        {/* ✅ PRICE DISPLAY */}
+                                        {hasDiscount ? (
+
+                                            <div>
+
+                                                <div className="text-danger fw-bold fs-5">
+                                                    ₦{finalPrice.toLocaleString()}
+                                                </div>
+
+                                                <small className="text-muted text-decoration-line-through">
+                                                    ₦{oldPrice.toLocaleString()}
+                                                </small>
+
+                                            </div>
+
+                                        ) : (
+
+                                            <div className="text-danger fw-bold fs-5">
+                                                ₦{oldPrice.toLocaleString()}
+                                            </div>
+
+                                        )}
 
                                     </div>
 

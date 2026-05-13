@@ -31,6 +31,9 @@ import AdminRoute from "./components/AdminRoute";
 import AdminVariants from "./pages/admin/AdminVariants";
 import AdminOrders from "./pages/admin/AdminOrders";
 import SearchResults from "./pages/SearchResults";
+import DealsPage from "./pages/DealsPage";
+import ProductGrid from "./components/ProductGrid";
+import AllProducts from "./components/AllProducts";
 
 function NonHomeLayout() {
   return (
@@ -61,6 +64,8 @@ function App() {
           <Route path="/orders" element={<Order />} />
           <Route path="/orders/:id" element={<OrderTracking />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/deals" element={<DealsPage />} />
+          <Route path="/products" element={<AllProducts />} />
           <Route
             path="/search"
             element={<SearchResults />}

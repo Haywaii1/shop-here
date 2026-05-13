@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 
 export default function AdminOrders() {
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [trackingNumbers, setTrackingNumbers] = useState({});
 
   const token = localStorage.getItem("admin_token");
 
@@ -69,30 +71,39 @@ export default function AdminOrders() {
   };
 
   const handleOutForDelivery = async (id) => {
-    try {
-      const res = await fetch(
-        `http://127.0.0.1:8000/api/admin/orders/${id}/out-for-delivery`,
-        {
-          method: "PUT",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
 
-      const data = await res.json();
+  const trackingNumber = trackingNumbers[id]?.trim();
 
-      if (!res.ok) {
-        alert(data.message || "Failed to dispatch order");
-        return;
+  try {
+    const res = await fetch(
+      `http://127.0.0.1:8000/api/admin/orders/${id}/out-for-delivery`,
+      {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tracking_number: trackingNumber || null,
+        }),
       }
+    );
 
-      fetchOrders();
-    } catch (err) {
-      console.error(err);
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error(data);
+      alert(data.message || "Something went wrong");
+      return;
     }
-  };
+
+    fetchOrders();
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -156,9 +167,9 @@ export default function AdminOrders() {
                     </button>
                   )}
 
-                  {order.status === "preparing_shipment" && (
+                   {order.status === "preparing_shipment" && (
                     <>
-                      <small className="text-muted align-self-center">
+                     <small className="text-muted align-self-center">
                         {order.tracking_number || "Tracking number will be auto-generated"}
                       </small>
                       <button

@@ -313,20 +313,46 @@ class ProductController extends Controller
         ]);
     }
 
+    // public function deals()
+    // {
+    //     $this->expireDeals();
+
+    //     $query = Product::with(['images', 'category'])
+    //         ->where('is_deal', true)
+    //         ->whereNotNull('deal_percentage');
+
+    //     if ($this->hasDealScheduleColumns()) {
+    //         $query->where(function ($query) {
+    //             $query->whereNull('deal_starts_at')
+    //                 ->orWhere('deal_starts_at', '<=', now());
+    //         })
+    //             ->where(function ($query) {
+    //                 $query->whereNull('deal_ends_at')
+    //                     ->orWhere('deal_ends_at', '>', now());
+    //             });
+    //     }
+
+    //     return $query->latest()->take(10)->get();
+    // }
+
     public function deals()
     {
         $this->expireDeals();
 
         $query = Product::with(['images', 'category'])
             ->where('is_deal', true)
-            ->whereNotNull('deal_percentage');
+            ->whereNotNull('deal_percentage')
+            ->where('deal_percentage', '>', 0);
 
         if ($this->hasDealScheduleColumns()) {
+
             $query->where(function ($query) {
+
                 $query->whereNull('deal_starts_at')
                     ->orWhere('deal_starts_at', '<=', now());
             })
                 ->where(function ($query) {
+
                     $query->whereNull('deal_ends_at')
                         ->orWhere('deal_ends_at', '>', now());
                 });
