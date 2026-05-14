@@ -19,6 +19,13 @@ export default function SearchResults() {
             .then(res => res.json())
             .then(data => {
 
+                // ✅ SPLIT SEARCH KEYWORDS
+                const keywords =
+                    query
+                        ?.toLowerCase()
+                        .split(" ")
+                        .filter(Boolean) || [];
+
                 const filtered = data.filter(product => {
 
                     const name =
@@ -27,26 +34,16 @@ export default function SearchResults() {
                     const category =
                         product.category?.name?.toLowerCase() || "";
 
-                    const searchText =
-                        query?.toLowerCase() || "";
+                    const description =
+                        product.description?.toLowerCase() || "";
 
-                    // ✅ SEARCH FOR DEALS / DISCOUNTS TOO
-                    const isDiscounted =
-                        product.is_deal ||
-                        Number(product.deal_percentage) > 0;
+                    // ✅ MATCH ANY KEYWORD
+                    return keywords.some(keyword =>
 
-                    // ✅ SPECIAL SEARCHES
-                    if (
-                        searchText.includes("deal") ||
-                        searchText.includes("discount") ||
-                        searchText.includes("sale")
-                    ) {
-                        return isDiscounted;
-                    }
+                        name.includes(keyword) ||
+                        category.includes(keyword) ||
+                        description.includes(keyword)
 
-                    return (
-                        name.includes(searchText) ||
-                        category.includes(searchText)
                     );
 
                 });
@@ -71,14 +68,30 @@ export default function SearchResults() {
 
         <div className="container py-5">
 
-            <h3 className="mb-4">
-                Search Results for "{query}"
-            </h3>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+
+                    <h3 className="fw-bold mb-1">
+                        Search Results
+                    </h3>
+
+                    <p className="text-muted mb-0">
+                        Showing results for "{query}"
+                    </p>
+
+                </div>
+
+                <span className="badge bg-dark">
+                    {products.length} Products
+                </span>
+
+            </div>
 
             {products.length === 0 ? (
 
-                <div className="alert alert-warning">
-                    No products found.
+                <div className="alert alert-warning rounded-4">
+                    No matching products found.
                 </div>
 
             ) : (
@@ -100,31 +113,31 @@ export default function SearchResults() {
                             : smallProductPlaceholder;
 
                         // ✅ DEAL LOGIC
-                        const oldPrice = Number(product.price);
+                        const discountPercent =
+                            product.is_deal
+                                ? product.deal_percentage || 0
+                                : 0;
 
-                        const discountPercent = Number(
-                            product.deal_percentage || 0
-                        );
+                        const oldPrice =
+                            Number(product.price);
 
-                        const hasDiscount =
-                            product.is_deal &&
-                            discountPercent > 0;
-
-                        const finalPrice = hasDiscount
-                            ? oldPrice -
-                              (oldPrice * discountPercent) / 100
-                            : oldPrice;
+                        const discountedPrice =
+                            oldPrice -
+                            (oldPrice * discountPercent / 100);
 
                         return (
 
                             <div
                                 key={product.id}
-                                className="col-md-3 mb-4"
+                                className="col-md-4 col-lg-3 mb-4"
                             >
 
                                 <div
-                                    className="card h-100 border-0 shadow-sm position-relative"
-                                    style={{ cursor: "pointer" }}
+                                    className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
+                                    style={{
+                                        cursor: "pointer",
+                                        transition: "0.3s"
+                                    }}
                                     onClick={() =>
                                         navigate(
                                             `/product/${product.slug}/${product.id}`
@@ -132,24 +145,11 @@ export default function SearchResults() {
                                     }
                                 >
 
-                                    {/* ✅ DISCOUNT BADGE */}
-                                    {hasDiscount && (
-                                        <span
-                                            className="badge bg-danger position-absolute"
-                                            style={{
-                                                top: "10px",
-                                                right: "10px",
-                                                zIndex: 10
-                                            }}
-                                        >
-                                            -{discountPercent}%
-                                        </span>
-                                    )}
-
+                                    {/* IMAGE */}
                                     <div
+                                        className="position-relative"
                                         style={{
-                                            height: "220px",
-                                            overflow: "hidden",
+                                            height: "230px",
                                             background: "#f8f8f8"
                                         }}
                                     >
@@ -159,40 +159,54 @@ export default function SearchResults() {
                                             alt={product.name}
                                             className="w-100 h-100"
                                             style={{
-                                                objectFit: "contain"
+                                                objectFit: "contain",
+                                                padding: "12px"
                                             }}
                                         />
 
+                                        {/* DEAL BADGE */}
+                                        {product.is_deal && (
+                                            <span className="badge bg-danger position-absolute top-0 start-0 m-2">
+                                                -{discountPercent}%
+                                            </span>
+                                        )}
+
                                     </div>
 
+                                    {/* BODY */}
                                     <div className="card-body">
 
-                                        <h6 className="fw-bold">
-                                            {product.name}
-                                        </h6>
-
-                                        <small className="text-muted d-block mb-2">
+                                        <small className="text-muted d-block mb-1">
                                             {product.category?.name}
                                         </small>
 
-                                        {/* ✅ PRICE DISPLAY */}
-                                        {hasDiscount ? (
+                                        <h6
+                                            className="fw-bold"
+                                            style={{
+                                                minHeight: "48px"
+                                            }}
+                                        >
+                                            {product.name}
+                                        </h6>
+
+                                        {/* PRICE */}
+                                        {product.is_deal ? (
 
                                             <div>
 
-                                                <div className="text-danger fw-bold fs-5">
-                                                    ₦{finalPrice.toLocaleString()}
-                                                </div>
+                                                <span className="fw-bold text-danger fs-5 me-2">
+                                                    ₦{discountedPrice.toLocaleString()}
+                                                </span>
 
-                                                <small className="text-muted text-decoration-line-through">
+                                                <span className="text-muted text-decoration-line-through">
                                                     ₦{oldPrice.toLocaleString()}
-                                                </small>
+                                                </span>
 
                                             </div>
 
                                         ) : (
 
-                                            <div className="text-danger fw-bold fs-5">
+                                            <div className="fw-bold text-dark fs-5">
                                                 ₦{oldPrice.toLocaleString()}
                                             </div>
 

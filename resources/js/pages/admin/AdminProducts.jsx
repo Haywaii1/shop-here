@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate
+} from "react-router-dom";
 
 export default function AdminProducts() {
 
@@ -51,11 +55,16 @@ export default function AdminProducts() {
 
       try {
 
-        data = text ? JSON.parse(text) : {};
+        data = text
+          ? JSON.parse(text)
+          : {};
 
       } catch (err) {
 
-        console.error("Non-JSON response:", text);
+        console.error(
+          "Non-JSON response:",
+          text
+        );
 
         alert("Server error");
 
@@ -68,54 +77,69 @@ export default function AdminProducts() {
         console.error("Error:", data);
 
         alert(
-          data.message || "Failed to load products"
+          data.message ||
+          "Failed to load products"
         );
 
         return;
 
       }
 
-      const allProducts = Array.isArray(data)
-        ? data
-        : data.products || [];
+      const allProducts =
+        Array.isArray(data)
+          ? data
+          : data.products || [];
 
-      let filteredProducts = allProducts;
+      let filteredProducts =
+        allProducts;
 
       // 🔥 DEAL PRODUCTS
       if (isDealsPage) {
 
-        filteredProducts = allProducts.filter(
-          product => product.is_deal
-        );
+        filteredProducts =
+          allProducts.filter(
+            product => product.is_deal
+          );
 
       }
 
       // ⚠️ LOW STOCK PRODUCTS
       if (isLowStockPage) {
 
-        filteredProducts = allProducts.filter(
-          product => {
+        filteredProducts =
+          allProducts.filter(
+            product => {
 
-            // variants stock
-            if (product.variants?.length > 0) {
+              // variants stock
+              if (
+                product.variants?.length > 0
+              ) {
 
-              const totalVariantStock =
-                product.variants.reduce(
-                  (sum, variant) =>
-                    sum +
-                    Number(variant.stock || 0),
-                  0
+                const totalVariantStock =
+                  product.variants.reduce(
+                    (sum, variant) =>
+                      sum +
+                      Number(
+                        variant.stock || 0
+                      ),
+                    0
+                  );
+
+                return (
+                  totalVariantStock < 3
                 );
 
-              return totalVariantStock < 3;
+              }
+
+              // normal stock
+              return (
+                Number(
+                  product.stock || 0
+                ) < 3
+              );
 
             }
-
-            // normal stock
-            return Number(product.stock || 0) < 3;
-
-          }
-        );
+          );
 
       }
 
@@ -123,7 +147,10 @@ export default function AdminProducts() {
 
     } catch (error) {
 
-      console.error("Fetch error:", error);
+      console.error(
+        "Fetch error:",
+        error
+      );
 
       alert("Network error");
 
@@ -144,7 +171,11 @@ export default function AdminProducts() {
   // 🗑 DELETE PRODUCT
   const deleteProduct = async (id) => {
 
-    if (!window.confirm("Delete this product?")) {
+    if (
+      !window.confirm(
+        "Delete this product?"
+      )
+    ) {
       return;
     }
 
@@ -155,7 +186,8 @@ export default function AdminProducts() {
         {
           method: "DELETE",
           headers: {
-            Accept: "application/json",
+            Accept:
+              "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
@@ -163,7 +195,9 @@ export default function AdminProducts() {
 
       if (!res.ok) {
 
-        alert("Failed to delete product");
+        alert(
+          "Failed to delete product"
+        );
 
         return;
 
@@ -173,14 +207,19 @@ export default function AdminProducts() {
 
     } catch (error) {
 
-      console.error("Delete error:", error);
+      console.error(
+        "Delete error:",
+        error
+      );
 
     }
 
   };
 
   // 🔥 TOGGLE DEAL
-  const toggleDeal = async (product) => {
+  const toggleDeal = async (
+    product
+  ) => {
 
     try {
 
@@ -197,17 +236,24 @@ export default function AdminProducts() {
 
         if (!percentage) return;
 
-        const durationInput = prompt(
-          "Enter deal duration in hours",
-          "24"
-        );
-
-        if (durationInput === null) return;
-
-        durationHours = Number(durationInput);
+        const durationInput =
+          prompt(
+            "Enter deal duration in hours",
+            "24"
+          );
 
         if (
-          !Number.isInteger(durationHours) ||
+          durationInput === null
+        ) return;
+
+        durationHours = Number(
+          durationInput
+        );
+
+        if (
+          !Number.isInteger(
+            durationHours
+          ) ||
           durationHours < 1
         ) {
 
@@ -226,23 +272,30 @@ export default function AdminProducts() {
         {
           method: "POST",
           headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
+            Accept:
+              "application/json",
+            "Content-Type":
+              "application/json",
             Authorization: `Bearer ${token}`,
           },
 
           body: JSON.stringify({
-            deal_percentage: percentage,
-            duration_hours: durationHours
+            deal_percentage:
+              percentage,
+            duration_hours:
+              durationHours
           }),
         }
       );
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
       if (!res.ok) {
 
-        alert(data.message || "Failed");
+        alert(
+          data.message || "Failed"
+        );
 
         return;
 
@@ -274,173 +327,236 @@ export default function AdminProducts() {
 
     <div className="container">
 
-      {/* PAGE TITLE */}
-      <h3 className="my-4">
-
-        {isDealsPage
-          ? "Deals of the Day"
-          : isLowStockPage
-            ? "Low Stock Products"
-            : "Products"}
-
-      </h3>
-
-      {/* ADD PRODUCT */}
-      {!isDealsPage && !isLowStockPage && (
+      {/* ✅ BACK BUTTON */}
+      <div className="mt-4 mb-3">
 
         <Link
-          to="/admin/products/create"
-          className="btn btn-primary mb-3"
+          to="/admin/dashboard"
+          className="btn btn-outline-dark rounded-pill px-4"
         >
-          Add Product
+          ← Back to Admin Dashboard
         </Link>
 
-      )}
+      </div>
+
+      {/* PAGE TITLE */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+          <h3 className="fw-bold mb-1">
+
+            {isDealsPage
+              ? "Deals of the Day"
+              : isLowStockPage
+                ? "Low Stock Products"
+                : "Products"}
+
+          </h3>
+
+          <p className="text-muted mb-0">
+
+            {isDealsPage
+              ? "Manage discounted products"
+              : isLowStockPage
+                ? "Products running low in stock"
+                : "Manage all store products"}
+
+          </p>
+
+        </div>
+
+        <span className="badge bg-dark fs-6">
+          {products.length} Products
+        </span>
+
+      </div>
+
+      {/* ADD PRODUCT */}
+      {!isDealsPage &&
+        !isLowStockPage && (
+
+          <Link
+            to="/admin/products/create"
+            className="btn btn-primary mb-4"
+          >
+            Add Product
+          </Link>
+
+        )}
 
       {/* PRODUCTS TABLE */}
-      <table className="table table-bordered">
+      <div className="table-responsive">
 
-        <thead>
+        <table className="table table-bordered align-middle">
 
-          <tr>
-
-            <th>ID</th>
-            <th>Name</th>
-            <th>Price</th>
-            <th>Category</th>
-            <th>Stock</th>
-            <th>Action</th>
-
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-          {products.length === 0 ? (
+          <thead className="table-light">
 
             <tr>
 
-              <td
-                colSpan="6"
-                className="text-center"
-              >
-
-                {isDealsPage
-                  ? "No active deals found"
-                  : isLowStockPage
-                    ? "No low stock products found"
-                    : "No products found"}
-
-              </td>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Category</th>
+              <th>Stock</th>
+              <th width="320">
+                Action
+              </th>
 
             </tr>
 
-          ) : (
+          </thead>
 
-            products.map(product => {
+          <tbody>
 
-              const totalStock =
-                product.variants?.length > 0
-                  ? product.variants.reduce(
-                    (sum, variant) =>
-                      sum +
-                      Number(
-                        variant.stock || 0
-                      ),
-                    0
-                  )
-                  : Number(product.stock || 0);
+            {products.length === 0 ? (
 
-              return (
+              <tr>
 
-                <tr key={product.id}>
+                <td
+                  colSpan="6"
+                  className="text-center py-4"
+                >
 
-                  <td>{product.id}</td>
+                  {isDealsPage
+                    ? "No active deals found"
+                    : isLowStockPage
+                      ? "No low stock products found"
+                      : "No products found"}
 
-                  <td>{product.name}</td>
+                </td>
 
-                  <td>
-                    ₦{Number(product.price).toLocaleString()}
-                  </td>
+              </tr>
 
-                  <td>
-                    {product.category?.name || "-"}
-                  </td>
+            ) : (
 
-                  {/* STOCK */}
-                  <td>
+              products.map(product => {
 
-                    <span
-                      className={`badge ${totalStock < 3
+                const totalStock =
+                  product.variants
+                    ?.length > 0
+                    ? product.variants.reduce(
+                      (
+                        sum,
+                        variant
+                      ) =>
+                        sum +
+                        Number(
+                          variant.stock ||
+                          0
+                        ),
+                      0
+                    )
+                    : Number(
+                      product.stock ||
+                      0
+                    );
+
+                return (
+
+                  <tr
+                    key={product.id}
+                  >
+
+                    <td>
+                      {product.id}
+                    </td>
+
+                    <td className="fw-semibold">
+                      {product.name}
+                    </td>
+
+                    <td className="fw-bold">
+                      ₦
+                      {Number(
+                        product.price
+                      ).toLocaleString()}
+                    </td>
+
+                    <td>
+                      {product.category
+                        ?.name || "-"}
+                    </td>
+
+                    {/* STOCK */}
+                    <td>
+
+                      <span
+                        className={`badge ${totalStock < 3
                           ? "bg-danger"
                           : "bg-success"
-                        }`}
-                    >
+                          }`}
+                      >
 
-                      {totalStock}
+                        {totalStock}
 
-                    </span>
+                      </span>
 
-                  </td>
+                    </td>
 
-                  {/* ACTIONS */}
-                  <td>
+                    {/* ACTIONS */}
+                    <td>
 
-                    <Link
-                      to={`/admin/products/${product.id}/edit`}
-                      className="btn btn-warning btn-sm me-2"
-                    >
-                      Edit
-                    </Link>
+                      <Link
+                        to={`/admin/products/${product.id}/edit`}
+                        className="btn btn-warning btn-sm me-2 mb-1"
+                      >
+                        Edit
+                      </Link>
 
-                    <Link
-                      to={`/admin/products/${product.id}/variants`}
-                      className="btn btn-info btn-sm me-2"
-                    >
-                      Variants
-                    </Link>
+                      <Link
+                        to={`/admin/products/${product.id}/variants`}
+                        className="btn btn-info btn-sm me-2 mb-1"
+                      >
+                        Variants
+                      </Link>
 
-                    {/* DEAL BUTTON */}
-                    <button
-                      className={`btn btn-sm me-2 ${product.is_deal
+                      {/* DEAL BUTTON */}
+                      <button
+                        className={`btn btn-sm me-2 mb-1 ${product.is_deal
                           ? "btn-danger"
                           : "btn-outline-primary"
-                        }`}
-                      onClick={() =>
-                        toggleDeal(product)
-                      }
-                    >
+                          }`}
+                        onClick={() =>
+                          toggleDeal(
+                            product
+                          )
+                        }
+                      >
 
-                      {product.is_deal
-                        ? "Remove Deal"
-                        : "Add Deal"}
+                        {product.is_deal
+                          ? "Remove Deal"
+                          : "Add Deal"}
 
-                    </button>
+                      </button>
 
-                    {/* DELETE */}
-                    <button
-                      onClick={() =>
-                        deleteProduct(product.id)
-                      }
-                      className="btn btn-danger btn-sm"
-                    >
-                      Delete
-                    </button>
+                      {/* DELETE */}
+                      <button
+                        onClick={() =>
+                          deleteProduct(
+                            product.id
+                          )
+                        }
+                        className="btn btn-danger btn-sm mb-1"
+                      >
+                        Delete
+                      </button>
 
-                  </td>
+                    </td>
 
-                </tr>
+                  </tr>
 
-              );
+                );
 
-            })
+              })
 
-          )}
+            )}
 
-        </tbody>
+          </tbody>
 
-      </table>
+        </table>
+
+      </div>
 
     </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function CreateProduct() {
 
@@ -109,6 +109,7 @@ export default function CreateProduct() {
       const text = await res.text();
 
       let data = {};
+
       try {
         data = text ? JSON.parse(text) : {};
       } catch {
@@ -137,92 +138,176 @@ export default function CreateProduct() {
       navigate(`/admin/products/${data.product.id}/variants`);
 
     } catch (error) {
-      console.error("Request failed:", error);
-      alert("Network error");
-    }
 
-    setLoading(false);
+      console.error("Request failed:", error);
+
+      alert("Network error");
+
+    } finally {
+
+      setLoading(false);
+
+    }
   };
 
   return (
 
-    <div className="container">
+    <div className="container py-4">
 
-      <h3 className="my-4">Create Product</h3>
+      {/* 🔙 BACK TO DASHBOARD */}
+      <div className="mb-3">
 
-      <form onSubmit={handleSubmit}>
-
-        <input
-          type="text"
-          name="name"
-          placeholder="Product Name"
-          className="form-control mb-3"
-          onChange={handleChange}
-          required
-        />
-
-        <input
-          type="number"
-          name="price"
-          placeholder="Price"
-          className="form-control mb-3"
-          onChange={handleChange}
-          required
-        />
-
-        <select
-          name="category_id"
-          className="form-control mb-3"
-          onChange={handleChange}
-          required
+        <Link
+          to="/admin/dashboard"
+          className="btn btn-outline-dark rounded-pill px-4"
         >
-          <option value="">Select Category</option>
+          ← Back to Admin Dashboard
+        </Link>
 
-          {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+      </div>
 
-        <textarea
-          name="description"
-          placeholder="Description"
-          className="form-control mb-3"
-          onChange={handleChange}
-        />
+      {/* PAGE TITLE */}
+      <div className="mb-4">
 
-        <input
-          type="file"
-          name="image1"
-          className="form-control mb-2"
-          onChange={handleImageChange}
-        />
+        <h3 className="fw-bold">
+          Create Product
+        </h3>
 
-        <input
-          type="file"
-          name="image2"
-          className="form-control mb-2"
-          onChange={handleImageChange}
-        />
+        <p className="text-muted mb-0">
+          Add a new product to your store
+        </p>
 
-        <input
-          type="file"
-          name="image3"
-          className="form-control mb-3"
-          onChange={handleImageChange}
-        />
+      </div>
 
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={loading}
-        >
-          {loading ? "Saving..." : "Save Product"}
-        </button>
+      {/* FORM */}
+      <div className="card border-0 shadow-sm rounded-4 p-4">
 
-      </form>
+        <form onSubmit={handleSubmit}>
+
+          {/* PRODUCT NAME */}
+          <div className="mb-3">
+
+            <label className="form-label fw-semibold">
+              Product Name
+            </label>
+
+            <input
+              type="text"
+              name="name"
+              placeholder="Enter product name"
+              className="form-control"
+              onChange={handleChange}
+              required
+            />
+
+          </div>
+
+          {/* PRICE */}
+          <div className="mb-3">
+
+            <label className="form-label fw-semibold">
+              Price
+            </label>
+
+            <input
+              type="number"
+              name="price"
+              placeholder="Enter product price"
+              className="form-control"
+              onChange={handleChange}
+              required
+            />
+
+          </div>
+
+          {/* CATEGORY */}
+          <div className="mb-3">
+
+            <label className="form-label fw-semibold">
+              Category
+            </label>
+
+            <select
+              name="category_id"
+              className="form-control"
+              onChange={handleChange}
+              required
+            >
+              <option value="">
+                Select Category
+              </option>
+
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+
+            </select>
+
+          </div>
+
+          {/* DESCRIPTION */}
+          <div className="mb-3">
+
+            <label className="form-label fw-semibold">
+              Description
+            </label>
+
+            <textarea
+              name="description"
+              placeholder="Enter product description"
+              className="form-control"
+              rows="4"
+              onChange={handleChange}
+            />
+
+          </div>
+
+          {/* IMAGES */}
+          <div className="mb-3">
+
+            <label className="form-label fw-semibold">
+              Product Images
+            </label>
+
+            <input
+              type="file"
+              name="image1"
+              className="form-control mb-2"
+              onChange={handleImageChange}
+            />
+
+            <input
+              type="file"
+              name="image2"
+              className="form-control mb-2"
+              onChange={handleImageChange}
+            />
+
+            <input
+              type="file"
+              name="image3"
+              className="form-control"
+              onChange={handleImageChange}
+            />
+
+          </div>
+
+          {/* SUBMIT BUTTON */}
+          <button
+            type="submit"
+            className="btn btn-primary px-4 rounded-pill"
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "Save Product"}
+          </button>
+
+        </form>
+
+      </div>
 
     </div>
+
   );
 }
